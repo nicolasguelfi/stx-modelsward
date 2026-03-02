@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: modelsward-streamtex
+    runtime: docker
+    repo: https://github.com/nicolasguelfi/modelsward-streamtex
+    branch: main
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: STX_PASSWORD
+        value: changeme
+    healthCheckPath: /_stcore/health
