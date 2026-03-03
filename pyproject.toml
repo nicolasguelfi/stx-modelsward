@@ -1,5 +1,5 @@
 [project]
-name = "modelsward-streamtex"
+name = "stx-modelsward"
 version = "1.0.0"
 description = "MODELSWARD 2026 — Agentic BPMN Framework presentation"
 requires-python = ">=3.10"
@@ -13,4 +13,7 @@ dev = ["pytest>=7.0", "ruff>=0.4.0"]
 default-groups = ["dev"]
 
 [tool.uv.sources]
-streamtex = { path = "../streamtex", editable = true }
+streamtex = { path = "../../streamtex", editable = true }
+
+[tool.pyright]
+extraPaths = ["../../streamtex"]

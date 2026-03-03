@@ -16,10 +16,10 @@ Arguments: $ARGUMENTS (slide name and description, e.g. "bck_19_zoom - Zoom cont
    - Main heading with `tag=t.div, toc_lvl="1"`
    - Each subsection following the canonical structure:
      - `st_write(bs.sub, ..., toc_lvl="+1")` + `st_space("v", 1)`
-     - `show_explanation(textwrap.dedent("""\..."""))`  + `st_space("v", 1)`
-     - `show_code(textwrap.dedent("""\..."""))` + `st_space("v", 1)`
+     - `show_explanation("""\...""")`  + `st_space("v", 1)`
+     - `show_code(textwrap.dedent("""\...""")` + `st_space("v", 1)`
      - Live rendering + `st_space("v", 2)`
-     - Optional `show_details(textwrap.dedent("""\..."""))` with defaults
+     - Optional `show_details("""\...""")` with defaults
 6. **Validate**:
    - No line of visible text exceeds ~45 characters
    - Every live rendering has a preceding `show_code()`

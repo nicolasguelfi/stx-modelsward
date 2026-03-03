@@ -9,8 +9,10 @@ StreamTeX wraps Streamlit with a block-based architecture. Never manually write 
 - **GOOD:** `stx.st_write(s.text.colors.red, "Text")`
 
 ## 2. Source of Truth
-- **Syntax Reference:** `documentation/streamtex_cheatsheet_en.md`
-- **Architecture Reference:** Any project's `book.py` (orchestrates blocks/). See `documentation/template_project/` or `documentation/manuals/stx_manual_intro/` for illustration.
+- **Syntax Reference:** `references/streamtex_cheatsheet_en.md`
+- **Architecture Reference:** Any project's `book.py` (orchestrates blocks/). See `templates/template_project/` or `manuals/stx_manual_intro/` for illustration.
+- **Manuals:** Intro (fundamentals), Advanced (features), Deploy (deployment), Developer (library internals)
+- **Developer Guide:** `manuals/stx_manual_developer/` — repo structure, architecture, testing, CI/CD, release
 
 ## 3. Project Structure
 ```

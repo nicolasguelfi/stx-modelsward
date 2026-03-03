@@ -1,6 +1,6 @@
 import streamlit as st
 import setup
-from streamtex import st_book, TOCConfig, MarkerConfig
+from streamtex import st_book, TOCConfig, NumberingMode, MarkerConfig
 import blocks
 from custom.styles import Styles as s
 from custom.themes import dark
@@ -11,12 +11,12 @@ st.set_page_config(
     page_title="MODELSWARD 2026 — Agentic BPMN Framework",
     page_icon=None,
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
     menu_items=None,
 )
 
 toc = TOCConfig(
-    numerate_titles=False,
+    numbering=NumberingMode.SIDEBAR_ONLY,
     toc_position=0,
     title_style=s.project.titles.section_title + s.center_txt + s.text.wrap.nowrap,
     sidebar_max_level=2,

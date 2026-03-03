@@ -30,10 +30,10 @@ st_write(s.large, "that reads well on a slide.")
 - Each line in the dedented string becomes a separate rendered line.
 
 ```python
-show_explanation(textwrap.dedent("""\
+show_explanation("""\
     Short first line for readability.
     Second line continues the explanation.
-"""))
+""")
 ```
 
 ## 3. Font Size Hierarchy
@@ -63,16 +63,16 @@ st_write(bs.sub, "Feature Name", toc_lvl="+1")
 st_space("v", 1)
 
 # 2. Explanation box (what & why)
-show_explanation(textwrap.dedent("""\
+show_explanation("""\
     What this feature does.
     Why you would use it.
-"""))
+""")
 st_space("v", 1)
 
 # 3. Code box (syntax-highlighted)
 show_code(textwrap.dedent("""\
     st_write(s.large, "Example code")
-"""))
+""")
 st_space("v", 1)
 
 # 4. Live rendering
@@ -80,10 +80,10 @@ st_write(s.large, "Example code")
 st_space("v", 2)
 
 # 5. Optional: details box (defaults & tips)
-show_details(textwrap.dedent("""\
+show_details("""\
     Default: param=value.
     Additional tips about this feature.
-"""))
+""")
 ```
 
 ## 5. Every Example Must Have Code
@@ -108,7 +108,7 @@ with st_block(s.project.containers.bad_callout):
     st_space("v", 1)
     show_code_inline(textwrap.dedent("""\
         # the wrong code here
-    """))
+    """)
 ```
 
 ## 7. Default Parameter Values

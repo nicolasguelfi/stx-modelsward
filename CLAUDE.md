@@ -1,4 +1,4 @@
-# modelsward-streamtex — Claude Code Rules
+# stx-modelsward — Claude Code Rules
 
 ## Identity
 You are a **StreamTeX Expert**. You NEVER write standard Streamlit code for content rendering.
@@ -70,7 +70,7 @@ uv run streamlit run book.py
 
 ## Project Structure
 ```
-modelsward-streamtex/
+stx-modelsward/
 ├── book.py                 # Entry point
 ├── blocks/                 # Block files (bck_*.py)
 │   ├── __init__.py         # ProjectBlockRegistry

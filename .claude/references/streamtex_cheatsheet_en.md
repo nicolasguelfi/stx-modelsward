@@ -230,13 +230,14 @@ st_write(style, "Subsection", toc_lvl="+1")
 
 # TOCConfig — full options
 toc = TOCConfig(
-    numerate_titles=False,          # Auto-numbering of headings
+    numbering=NumberingMode.SIDEBAR_ONLY,  # Numbered in sidebar TOC, not in document
     toc_position=0,                 # 0=start, -1=end, None=no TOC
     title_style=s.project.titles.section_title + s.center_txt,
     content_style=s.large + s.text.colors.reset,
-    sidebar_max_level=None,         # None = auto (paginated: 1, continuous: 2)
+    sidebar_max_level=2,            # Number headings up to level 2
     search=True,                    # Full-text search in sidebar
 )
+# NumberingMode options: SIDEBAR_ONLY (default), ALL (sidebar + document), NONE
 ```
 
 ### Marker Navigation
@@ -255,6 +256,17 @@ marker_config = MarkerConfig(
     prev_keys=["PageUp"],          # Navigate backward
 )
 st_book([...], marker_config=marker_config)
+```
+
+### Link Configuration
+
+```python
+from streamtex import LinkConfig, set_link_config
+
+set_link_config(LinkConfig(
+    internal_target="_self",     # Same-domain links open in same tab
+    external_target="_blank",    # External links open in new tab
+))
 ```
 
 ## Predefined Styles
@@ -358,14 +370,14 @@ stx.set_static_sources([str(Path(__file__).parent / "static")])
 st.set_page_config(
     page_title="My Project",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # Inject dark theme
 sts.theme = dark
 
 # TOC + Markers
-toc = TOCConfig(numerate_titles=False, toc_position=0, search=True)
+toc = TOCConfig(numbering=NumberingMode.SIDEBAR_ONLY, toc_position=0, sidebar_max_level=2, search=True)
 marker_config = MarkerConfig(auto_marker_on_toc=1, next_keys=["PageDown"], prev_keys=["PageUp"])
 
 # Orchestrate blocks
@@ -632,15 +644,15 @@ show_code("print('hello')", style=s.custom.style)    # Override with explicit st
 show_code('{"key": "value"}', language="json", wrap=True)  # Wrapping for JSON
 
 # show_explanation / show_details render Markdown (bold, italic, lists, links…)
-show_explanation(textwrap.dedent("""\
+show_explanation("""\
     **st_markdown()** renders interpreted Markdown content.
     Use it for documentation with *formatting* and `code`.
-"""))
-show_details(textwrap.dedent("""\
+""")
+show_details("""\
     **Key point**: this is the main takeaway.
 
     Additional details with *emphasis* and `code`.
-"""))
+""")
 ```
 
 ### OOP Inheritance (Advanced)
@@ -910,9 +922,38 @@ bib_sources = ["references.bib"]
 st_book([...], bib_sources=bib_sources, bib_config=bib_config)
 
 # In-text citations (inside blocks)
-from streamtex.bib import st_cite, st_bibliography
+from streamtex.bib import cite, st_cite, st_bibliography
 st_cite("author2024key")           # Inline citation widget
+cite("key1", "key2")               # Multi-key inline citation string
 st_bibliography()                   # Render full bibliography
+```
+
+### Output Formats (BibFormat)
+
+```python
+BibFormat.APA       # Author, A. B. (Year). Title. Journal.
+BibFormat.MLA       # Author. "Title." Journal, vol. N, Year.
+BibFormat.IEEE      # [1] A. Author, "Title," Journal, Year.
+BibFormat.CHICAGO   # Author. "Title." Journal N (Year): Pages.
+BibFormat.HARVARD   # Author Year, 'Title', Journal, vol. N.
+```
+
+### Citation Styles (CitationStyle)
+
+```python
+CitationStyle.AUTHOR_YEAR  # (Smith et al., 2020)
+CitationStyle.NUMERIC      # [1]
+CitationStyle.SUPERSCRIPT  # Text^1
+```
+
+### Custom Parsers
+
+```python
+from streamtex.bib import register_bib_parser, BibEntry
+
+def my_parser(filepath: str) -> list[BibEntry]:
+    ...
+register_bib_parser("myformat", my_parser)  # Auto-detect .myformat files
 ```
 
 ## Collection System (Multi-Project Hub)
@@ -962,16 +1003,32 @@ st_book([
 ## Google Sheets Import
 
 ```python
-from streamtex import GSheetConfig, set_gsheet_config, load_gsheet, load_gsheet_df
+from streamtex import GSheetConfig, GSheetSource, AuthMode
+from streamtex import set_gsheet_config, load_gsheet, load_gsheet_df
+
+# Authentication modes
+AuthMode.PUBLIC            # No auth (public sheets)
+AuthMode.SERVICE_ACCOUNT   # Server-side JSON key (production)
+AuthMode.OAUTH2            # Interactive browser auth (dev)
 
 # Configure
-config = GSheetConfig(...)
+config = GSheetConfig(
+    auth_mode=AuthMode.PUBLIC,          # or SERVICE_ACCOUNT, OAUTH2
+    credentials_path="service.json",    # For SERVICE_ACCOUNT
+    cache_ttl=300,                      # Cache seconds (0=no, None=forever)
+)
 set_gsheet_config(config)
 
-# Load as module or DataFrame
-block_module = load_gsheet("path/to/source")
-df = load_gsheet_df("path/to/source")
+# Define source
+src = GSheetSource(sheet_id="abc123", tab_name="Sheet1")
+src = GSheetSource.from_url("https://docs.google.com/spreadsheets/d/abc123/...")
+
+# Load data
+data = load_gsheet(src)                 # List[Dict]
+df = load_gsheet_df(src)                # pandas DataFrame
 ```
+
+Credentials resolution: explicit path > `GSHEET_CREDENTIALS` env > `GOOGLE_APPLICATION_CREDENTIALS` env.
 
 ## Utilities
 
