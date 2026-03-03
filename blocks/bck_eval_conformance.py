@@ -1,10 +1,8 @@
-import streamlit as st
 import pandas as pd
 from streamtex import *
 import streamtex as stx
 from custom.styles import Styles as s
-from streamtex.styles import Style as ns, StyleGrid as sg
-from streamtex.enums import Tags as t, ListTypes as lt
+from streamtex.styles import Style as ns
 
 
 class BlockStyles:

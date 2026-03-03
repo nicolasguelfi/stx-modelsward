@@ -1,5 +1,4 @@
 import streamlit as st
-import setup
 from streamtex import st_book, TOCConfig, NumberingMode, MarkerConfig
 import blocks
 from custom.styles import Styles as s
