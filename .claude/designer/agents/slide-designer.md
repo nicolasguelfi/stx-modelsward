@@ -28,7 +28,7 @@ pedagogically structured slide content for presentation projects.
 - WRONG examples always explain WHY they're wrong
 
 ### Code Quality
-- All text blocks use `textwrap.dedent("""\...""")`
+- All multi-line text blocks use `"""\..."""`
 - Standard imports + helpers in every block
 - `BlockStyles` class with `heading` and `sub` + `bs` alias
 - All content wrapped in `with st_block(s.center_txt):`
