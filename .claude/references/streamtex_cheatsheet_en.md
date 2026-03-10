@@ -108,6 +108,7 @@ st_list(
 ```python
 st_write(
     *args,                          # Style objects, text, or (Style, text) tuples
+    style=s.none,                   # Base style (can also be passed as first positional arg)
     tag=t.span,                     # HTML tag: t.div, t.span, t.h1, t.p, t.section...
     link="",                        # Optional hyperlink URL
     no_link_decor=False,            # Remove underline from links
@@ -130,6 +131,21 @@ st_write(s.huge, "Appendix", toc_lvl="1", marker=False)
 st_write(s.huge, "Important", toc_lvl="2", marker=True)
 ```
 
+### st_image — Full Signature
+
+```python
+st_image(
+    style=s.none,                   # Style for the image container
+    width="100%",                   # CSS width
+    height="auto",                  # CSS height
+    uri="",                         # Image path (resolved via resolve_static())
+    alt="",                         # Alt text for accessibility
+    link="",                        # Optional hyperlink URL wrapping the image
+    hover=True,                     # Enable hover effect on linked images
+    light_bg=False,                 # Force white background (dark-mode compatibility)
+)
+```
+
 ### Images and Media
 
 ```python
@@ -149,6 +165,42 @@ st_image(s.container.sizes.height_auto, uri="image.png")
 st_image(uri="diagram.png", light_bg=True)
 ```
 
+### AI Image Generation
+
+```python
+from streamtex import set_ai_image_config, AIImageConfig
+from streamtex import st_ai_image, st_ai_image_widget, generate_image
+
+# Configure in book.py (once)
+set_ai_image_config(AIImageConfig(
+    provider="openai",             # "openai" | "google" | "fal"
+    default_size="1024x1024",
+    output_dir="static/images/ai",
+    auto_generate=False,           # Manual mode (button) by default
+))
+
+# Declarative — in block code
+st_ai_image("a minimalist neural network diagram, flat design, dark bg",
+            width="100%", provider="openai", size="1024x1024")
+
+# Interactive — widget with prompt input + generate button
+st_ai_image_widget(default_prompt="a serene landscape", key="my_gen",
+                   show_save=True)
+
+# Programmatic — generate without displaying (e.g. Claude workflow)
+path = generate_image("a futuristic city", provider="openai")
+st_image(uri=path, width="100%")
+```
+
+**API keys** via environment variables (`.env` or Render):
+```bash
+STX_OPENAI_API_KEY=sk-...
+STX_GOOGLE_AI_KEY=AIza...
+STX_FAL_KEY=fal-...
+```
+
+**Install providers**: `uv add "streamtex[ai]"` (all) or `uv add "streamtex[ai-openai]"` (single).
+
 ### st_grid — Full Signature
 
 ```python
@@ -159,6 +211,7 @@ st_grid(
     gap=None,                           # CSS gap string (e.g. "24px") — shorthand for gap in grid_style
     responsive=False,                   # When True, auto-wraps columns using min_width
     min_width=None,                     # Min column width for responsive mode (e.g. "350px" or 350)
+    breakpoint=None,                    # Viewport width below which grid collapses to 1 column (e.g. "600px")
 )
 ```
 
@@ -266,6 +319,7 @@ from streamtex import st_marker, MarkerConfig, st_book
 # Place markers manually
 st_marker("Section Start", visible=True)   # Visible marker (dashed border + label)
 st_marker("Hidden Waypoint")               # Invisible marker (default)
+st_marker("Nav Only", hidden=True)         # PageDown stops here, not shown in sidebar list
 
 # Auto-markers from TOC headings (in book.py)
 marker_config = MarkerConfig(
@@ -275,6 +329,10 @@ marker_config = MarkerConfig(
 )
 st_book([...], marker_config=marker_config)
 ```
+
+> **Search + Markers:** When `search=True` in TOCConfig and markers are enabled,
+> the sidebar search also filters marker entries — only markers belonging to
+> blocks that match the search query are shown (both paginated and continuous modes).
 
 ### Link Configuration
 
@@ -431,6 +489,8 @@ st_book(
     bib_config=None,                # BibConfig for bibliography
     inspector=None,                 # InspectorConfig for block inspector
     page_width=90,                  # Page width as % of browser width (default 90)
+    zoom=100,                       # Default zoom level as % (default 100)
+    pdf_config=None,                # PdfConfig for PDF export defaults
     banner_color="rgba(211,47,47,0.8)",  # Legacy — use banner=BannerConfig(...) instead
     monties_color=None,             # Legacy — use banner=BannerConfig(...) instead
 )
@@ -1000,6 +1060,8 @@ import streamtex as stx
 
 # Zoom is managed automatically by st_book().
 # Two independent sidebar controls: Width % and Zoom % (pure CSS, no JavaScript).
+# WYSIWYG export: Width % is propagated to HTML export (max-width).
+# Zoom % is propagated to HTML export (CSS zoom) and PDF export (scale default).
 
 # If calling manually:
 stx.add_zoom_options()                                  # Defaults: width=100%, zoom=100%
@@ -1260,8 +1322,10 @@ config = ExportConfig(
     page_title="My StreamTeX Export",  # Title of exported HTML document
     page_width="210mm",              # CSS max-width of the page container
     page_padding="20mm 15mm",        # CSS padding around the page
+    zoom=0.8,                        # CSS zoom applied to exported page (default 1.0)
 )
 # Passed internally by st_book(export=True); rarely constructed manually
+# Width % and Zoom % from the sidebar are automatically propagated to the export
 ```
 
 ### FileCategoryRegistry
@@ -1512,6 +1576,15 @@ add_wrap_all_option()                # Default: wrap enabled (True)
 add_wrap_all_option(default=False)   # Default: wrap disabled
 ```
 
+### st_space — Full Signature
+
+```python
+st_space(
+    direction="v",              # "v" for vertical, "h" for horizontal
+    size="1em",                 # CSS size value (e.g. "1em", "20px", 3)
+)
+```
+
 ### Spacing
 
 ```python
@@ -1521,6 +1594,110 @@ st_space("h", size=1)       # 1em horizontal space
 st_space("h", size="40px")  # 40px horizontal space
 st_br()                     # Line break
 st_br(count=3)              # 3 line breaks
+```
+
+### st_slide_break — Full Signature
+
+```python
+st_slide_break(
+    marker_label="",           # Custom label for the hidden marker (default: auto)
+    config=None,               # Optional SlideBreakConfig override
+)
+```
+
+### SlideBreakMode Enum
+
+```python
+from streamtex import SlideBreakMode
+
+SlideBreakMode.FULL          # Rule + spacer + marker (default)
+SlideBreakMode.RULE_ONLY     # Rule + marker, no spacer
+SlideBreakMode.SPACER_ONLY   # Spacer + marker, no rule
+SlideBreakMode.MARKER_ONLY   # Hidden marker only (no visual)
+SlideBreakMode.HIDDEN        # Completely hidden (no marker either)
+```
+
+### Slide Break (Presentation Mode)
+
+```python
+from streamtex import st_slide_break, SlideBreakConfig, SlideBreakMode, set_slide_break_config
+
+st_slide_break()            # Styled rule + 100vh spacer + hidden marker
+
+# Customize globally (in helpers.py):
+set_slide_break_config(SlideBreakConfig(
+    mode=SlideBreakMode.FULL, # Display mode (default FULL)
+    space="80vh",           # Vertical space (CSS value)
+    thickness="2px",        # Rule thickness
+    color="79, 172, 254",   # RGB values
+    opacity=0.5,            # 0.0–1.0
+    marker=True,            # Hidden marker for PageDown (default True)
+))
+
+# Per-call override:
+st_slide_break(config=SlideBreakConfig(mode=SlideBreakMode.RULE_ONLY, space="50vh", marker=False))
+```
+
+### Slide Break Options (Sidebar Widget)
+
+```python
+import streamtex as stx
+
+# Slide break options are managed automatically by st_book().
+# Sidebar controls: Enable/disable slide breaks, mode selection, space %.
+
+# If calling manually:
+stx.add_slide_break_options()                           # Defaults: enabled, FULL, 60vh
+stx.add_slide_break_options(default_enabled=True, default_mode=SlideBreakMode.FULL, default_space=60)
+
+# Low-level CSS variable injection (rarely needed):
+stx.inject_slide_break_css(enabled=True, mode=SlideBreakMode.FULL, space_vh=60)
+```
+
+### Slide Break CSS Variables
+
+```css
+--stx-break-space           /* Spacer height (e.g. 60vh) */
+--stx-break-thickness       /* Rule thickness (e.g. 1px) */
+--stx-break-opacity         /* Rule opacity (0.0–1.0) */
+--stx-break-rule-display    /* Rule display: block or none */
+--stx-break-spacer-display  /* Spacer display: block or none */
+```
+
+`@media print` rules automatically hide slide break visuals (rule and spacer)
+and insert `page-break-before` for paginated PDF export.
+
+### PDF Export
+
+```python
+from streamtex import export_pdf, PdfConfig, PdfMode
+
+# Requires: uv add "streamtex[pdf]" && playwright install chromium
+
+# Paginated (page break at each slide break):
+pdf_bytes = export_pdf(html, "output.pdf", PdfConfig(mode=PdfMode.PAGINATED))
+
+# Continuous (slide breaks removed):
+pdf_bytes = export_pdf(html, "output.pdf", PdfConfig(mode=PdfMode.CONTINUOUS))
+
+# Full config:
+config = PdfConfig(
+    mode=PdfMode.PAGINATED,
+    format="A4",              # A4, Letter, A3, Legal, Tabloid
+    landscape=True,           # Default True for presentations
+    margin_top="10mm",
+    margin_bottom="10mm",
+    margin_left="15mm",
+    margin_right="15mm",
+    print_background=True,    # Include background colors
+    scale=1.0,                # 0.1–2.0
+    page_numbers=False,       # Add "1 / N" footer
+    header_template="",       # Chromium print header HTML
+    footer_template="",       # Chromium print footer HTML
+)
+
+# Pass pdf_config to st_book() — sets defaults for the sidebar PDF options:
+st_book([...], pdf_config=PdfConfig(format="A4", landscape=True, page_numbers=True))
 ```
 
 ### Containers

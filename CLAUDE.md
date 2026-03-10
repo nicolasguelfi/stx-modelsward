@@ -82,9 +82,12 @@ stx-modelsward/
 └── .streamlit/config.toml  # Streamlit config
 ```
 
-## Workflows
-1. **New Block** -> Read coding_standards.md, inspect existing blocks (`/designer:block-new`)
-2. **New Slide** -> Read designer skills (`/designer:slide-new`)
-3. **HTML Migration** -> Read migration commands (`/migration:html-migrate`)
-4. **Testing** -> `uv run pytest tests/ -v` (`/developer:test-run`)
-5. **Linting** -> `uv run ruff check` (`/developer:lint`)
+## Workflows — stx-designer Commands
+1. **Create project** -> `/stx-designer:init <description>`
+2. **Add content** -> `/stx-designer:update add a new block about X`
+3. **Customize** -> `/stx-designer:update change palette to blue/violet`
+4. **Audit quality** -> `/stx-designer:audit --all` or `/stx-designer:audit --target bck_intro`
+5. **Fix issues** -> `/stx-designer:fix --all`
+6. **Tools** -> `/stx-designer:tool survey-convert`
+7. **Testing** -> `uv run pytest tests/ -v` (`/developer:test-run`)
+8. **Linting** -> `uv run ruff check` (`/developer:lint`)

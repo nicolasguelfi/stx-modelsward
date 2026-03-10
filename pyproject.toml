@@ -2,9 +2,9 @@
 name = "stx-modelsward"
 version = "1.0.0"
 description = "MODELSWARD 2026 — Agentic BPMN Framework presentation"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "MIT"}
-dependencies = ["streamtex>=0.3.0"]
+dependencies = ["streamtex[ai,inspector,pdf]>=0.3.0"]
 
 [dependency-groups]
 dev = ["pytest>=7.0", "ruff>=0.4.0", "pre-commit>=3.0"]
