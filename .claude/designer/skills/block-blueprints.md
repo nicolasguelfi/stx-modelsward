@@ -1,9 +1,12 @@
 # Block Blueprints — Template Catalog
 
-This file documents 10 common block templates that Claude uses as reference
+This file documents 13 common block templates that Claude uses as reference
 when generating code via `/stx-designer:update` (add block) or `/stx-designer:init`.
 
 ## How to use
+
+> **Naming convention**: Block files use descriptive names (`bck_title.py`, `bck_containers.py`),
+> never numeric prefixes. Order is defined in `st_book([...])`.
 
 When the user requests a known block type, use the corresponding blueprint
 as a base and adapt it to the context (topic, number of bullets,
@@ -350,14 +353,63 @@ def build():
             provider="openai",
             key="image_lab",
             show_save=True,
-            editable=True,
         )
 ```
 
 **Note**: This blueprint uses Streamlit interactive widgets internally.
 In manual mode (default), no API call is made until the user clicks Generate.
-When the user requests an "editable" AI image, always use `editable=True` (default).
-This lets the end-user modify the prompt and regenerate the image interactively.
+The widget is inherently interactive — the end-user can modify the prompt and
+regenerate the image without any additional parameter.
+
+---
+
+## Blueprint 13: Fullscreen Slide (bck_fullscreen)
+
+A fullscreen 16/9 slide with title, grid content, and generous spacing.
+
+**When to use**: fullscreen presentation mode with `PresentationConfig`. Each slide
+fills the viewport and is separated by `st_slide_break()`.
+
+**Structure**:
+```python
+"""Fullscreen 16/9 slide with title, grid content, and generous spacing."""
+from streamtex import *
+from custom.styles import Styles as s
+
+class BlockStyles:
+    heading = s.Huge + s.bold + s.center_txt
+    sub = s.Large + s.bold
+    body = s.Large
+    body_accent = s.Large + s.bold + s.text.colors.accent
+    caption = s.large + s.muted
+bs = BlockStyles
+
+def build():
+    with st_block(s.center_txt):
+        st_write(bs.heading, "Slide Title", toc_lvl="1")
+        st_space(size=3)
+        with st_grid(cols="1fr 1fr", gap="32px"):
+            st_image(uri="static/images/illustration.png", width="100%")
+            with st_block():
+                st_write(bs.sub, "Subtitle")
+                st_space(size=2)
+                with st_list(l_style=bs.body, li_style=bs.body) as l:
+                    with l.item(): st_write(bs.body, "Key point 1")
+                    with l.item(): st_write(bs.body, "Key point 2")
+                    with l.item(): st_write(bs.body, "Key point 3")
+        st_space(size=3)
+        st_write(bs.caption, "Source: example.com")
+    st_slide_break(marker_label="Slide Title")
+```
+
+**Typical styles**:
+- `heading`: `s.Huge + s.bold + s.center_txt`
+- `sub`: `s.Large + s.bold`
+- `body`: `s.Large`
+- `caption`: `s.large + s.muted`
+
+**Note**: Use `paginate=False` with `PresentationConfig` in `book.py`. Each slide
+ends with `st_slide_break()` for keyboard navigation (PageDown/PageUp).
 
 ---
 
@@ -377,3 +429,4 @@ This lets the end-user modify the prompt and regenerate the image interactively.
 | "conclusion", "summary", "key takeaways" | 10 — Conclusion |
 | "AI image", "generate image", "image from prompt" | 11 — AI Image + Text |
 | "image lab", "interactive generation", "prompt editor" | 12 — Interactive Image Lab |
+| "fullscreen slide", "fullscreen presentation slide" | 13 — Fullscreen Slide |

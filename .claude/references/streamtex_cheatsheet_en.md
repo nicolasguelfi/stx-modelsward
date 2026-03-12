@@ -194,11 +194,13 @@ set_ai_image_config(AIImageConfig(
 
 # Declarative — in block code
 st_ai_image("a minimalist neural network diagram, flat design, dark bg",
-            width="100%", provider="openai", size="1024x1024")
+            width="100%", provider="openai", size="1024x1024",
+            api_key=None)  # Per-call API key override (bypasses config/env)
 
 # Interactive — widget with prompt input + generate button
 st_ai_image_widget(default_prompt="a serene landscape", key="my_gen",
-                   show_save=True)
+                   show_save=True,
+                   api_key=None)  # Per-call API key override (bypasses config/env)
 
 # Programmatic — generate without displaying (e.g. Claude workflow)
 path = generate_image("a futuristic city", provider="openai")
@@ -213,6 +215,67 @@ STX_FAL_KEY=fal-...
 ```
 
 **Install providers**: `uv add "streamtex[ai]"` (all) or `uv add "streamtex[ai-openai]"` (single).
+
+### AI Image — Models & Providers
+
+```python
+from streamtex import get_available_models
+
+# List available models for a provider
+models = get_available_models("openai")   # e.g. ["gpt-image-1"]
+models = get_available_models("google")   # e.g. ["imagen-3.0-generate-002"]
+models = get_available_models("fal")      # e.g. ["sd-v3.5"]
+```
+
+### AI Image — History & Versioning
+
+```python
+from streamtex import (
+    save_image_version, get_current_image, list_image_versions,
+    rollback_image, rename_image, ImageMetadata,
+)
+
+# Save a new version of a managed image
+path = save_image_version(
+    "hero_intro",                    # Semantic name
+    "static/images/hero.png",       # Source image path
+    source_type="ai_generated",     # "local" | "url" | "ai_generated"
+    prompt="a futuristic skyline",  # AI prompt (optional)
+    provider="openai",              # AI provider (optional)
+    model="gpt-image-1",           # AI model (optional)
+    size="1024x1024",              # AI size (optional)
+    quality="standard",            # AI quality (optional)
+)
+
+# Get current version path (None if not found)
+current = get_current_image("hero_intro")
+
+# List all versions — returns list of (version_number, ImageMetadata)
+versions = list_image_versions("hero_intro")
+
+# Rollback to a previous version (archives current first)
+restored = rollback_image("hero_intro", version=2)
+
+# Rename a managed image (current + all archived versions)
+new_path = rename_image("hero_intro", "hero_welcome")
+```
+
+`ImageMetadata` — dataclass for image version metadata:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `str` | Semantic name (e.g. `"hero_intro"`) |
+| `version` | `int` | Version number (default `1`) |
+| `timestamp` | `str` | ISO 8601 creation time |
+| `source_type` | `str` | `"local"`, `"url"`, or `"ai_generated"` |
+| `original_path` | `str` | Original source path or URL |
+| `prompt` | `str \| None` | AI prompt |
+| `provider` | `str \| None` | AI provider name |
+| `model` | `str \| None` | AI model identifier |
+| `size` | `str \| None` | AI generation size |
+| `quality` | `str \| None` | AI generation quality |
+| `base_image` | `str \| None` | Base image path for img2img |
+| `revised_prompt` | `str \| None` | Provider-revised prompt |
 
 ### st_grid — Full Signature
 
@@ -339,6 +402,8 @@ marker_config = MarkerConfig(
     auto_marker_on_toc=1,          # Level-1 TOC headings become markers
     next_keys=["PageDown"],        # Navigate forward
     prev_keys=["PageUp"],          # Navigate backward
+    draggable=True,                # User can drag the widget anywhere on screen
+    collapsible=True,              # ⋮ button to collapse/expand the widget
 )
 st_book([...], marker_config=marker_config)
 ```
@@ -475,8 +540,8 @@ marker_config = MarkerConfig(auto_marker_on_toc=1, next_keys=["PageDown"], prev_
 # Orchestrate blocks
 st_book(
     [
-        blocks.bck_01_welcome,
-        blocks.bck_02_content,
+        blocks.bck_welcome,
+        blocks.bck_content,
     ],
     toc_config=toc,
     marker_config=marker_config,
@@ -508,6 +573,18 @@ st_book(
     banner_color="rgba(211,47,47,0.8)",  # Legacy — use banner=BannerConfig(...) instead
     monties_color=None,             # Legacy — use banner=BannerConfig(...) instead
 )
+```
+
+### st_chrome_banner — Browser Recommendation
+
+```python
+from streamtex import st_chrome_banner
+
+# Show a dismissible banner recommending Chrome if the browser is not Chrome.
+# Injects a fixed-position banner in the parent Streamlit frame — does not
+# create a component in the block flow (no effect on TOC or block numbering).
+# Called automatically by st_book() when chrome_banner=True (the default).
+st_chrome_banner()
 ```
 
 ### BannerConfig — Paginated Navigation Banners
@@ -1631,6 +1708,43 @@ SlideBreakMode.MARKER_ONLY   # Hidden marker only (no visual)
 SlideBreakMode.HIDDEN        # Completely hidden (no marker either)
 ```
 
+### Presentation Config (Fullscreen 16:9)
+
+```python
+from streamtex import (
+    set_presentation_config, PresentationConfig,
+    st_presentation_footer, add_presentation_options,
+)
+
+# Configure in book.py (before st_book call)
+set_presentation_config(PresentationConfig(
+    title="My Presentation",
+    aspect_ratio="16/9",       # 16:9 viewport fitting
+    footer=True,               # Auto footer via st_presentation_footer()
+    center_content=True,       # Center slide content vertically
+    hide_streamlit_header=True, # Hide Streamlit hamburger menu
+))
+
+# Footer is rendered automatically when footer=True.
+# To render manually (rare): st_presentation_footer()
+
+# Sidebar options for presentation mode:
+add_presentation_options()     # Adds fullscreen toggle + aspect ratio selector
+```
+
+### SlideBreakConfig — Fullscreen Mode
+
+```python
+from streamtex import set_slide_break_config, SlideBreakConfig, SlideBreakMode
+
+# Fullscreen presentation: hidden breaks with marker navigation
+set_slide_break_config(SlideBreakConfig(
+    mode=SlideBreakMode.HIDDEN,  # No visible rule/spacer
+    fullscreen=True,             # Each slide = 100vh viewport
+    marker=True,                 # Hidden marker for PageDown nav
+))
+```
+
 ### Slide Break (Presentation Mode)
 
 ```python
@@ -1713,6 +1827,58 @@ config = PdfConfig(
 # Pass pdf_config to st_book() — sets defaults for the sidebar PDF options:
 st_book([...], pdf_config=PdfConfig(format="A4", landscape=True, page_numbers=True))
 ```
+
+## Presentation Mode (Fullscreen 16/9)
+
+### PresentationConfig
+
+```python
+from streamtex import PresentationConfig, set_presentation_config
+
+set_presentation_config(PresentationConfig(
+    title="My Presentation",
+    aspect_ratio="16/9",
+    footer=True,
+    center_content=True,
+    hide_streamlit_header=True,
+))
+```
+
+### get_presentation_config()
+
+```python
+from streamtex import get_presentation_config
+
+config = get_presentation_config()  # -> PresentationConfig | None
+```
+
+### st_presentation_footer()
+
+```python
+from streamtex import st_presentation_footer
+
+st_presentation_footer(current_slide=3, total_slides=12, title="My Talk")
+```
+
+### add_presentation_options()
+
+```python
+from streamtex import add_presentation_options
+
+add_presentation_options()  # Sidebar controls for presenter
+```
+
+### SlideBreakConfig (fullscreen)
+
+```python
+from streamtex import SlideBreakConfig, SlideBreakMode, set_slide_break_config
+
+set_slide_break_config(SlideBreakConfig(fullscreen=True, mode=SlideBreakMode.HIDDEN, marker=True))
+```
+
+> **Important**: `PresentationConfig` requires `paginate=False` (default). Fullscreen mode
+> uses continuous scrolling with `st_slide_break()` for visual slide separation and
+> PageDown/PageUp keyboard navigation.
 
 ### Containers
 

@@ -56,7 +56,7 @@ Si `$ARGUMENTS` correspond a un **topic** reconnu (voir liste ci-dessous) : repo
 Si `$ARGUMENTS` est une **question libre** en langage naturel : utilise toute la base de connaissances
 pour fournir une reponse contextuelle.
 
-### Topics reconnus (16)
+### Topics reconnus (18)
 
 | Topic | Description |
 |-------|-------------|
@@ -72,6 +72,8 @@ pour fournir une reponse contextuelle.
 | `styles` | Systeme de styles (composition, themes, grids) |
 | `book` | Orchestration book.py (TOC, markers, banners, zoom) |
 | `ai-images` | Generation d'images IA (OpenAI, Google Imagen, fal.ai) |
+| `presentation` | Mode presentation fullscreen 16/9 |
+| `issues` | Creer des issues GitHub avec metadata auto-collectees |
 | `troubleshooting` | Gotchas connus et resolution de problemes |
 | `stx-cli` | Reference complete de toutes les commandes `stx` |
 | `release` | Workflow de release complet (dev : publier + propager) |
@@ -90,6 +92,8 @@ pour fournir une reponse contextuelle.
 - "comment publier une nouvelle version et propager a tous les users ?"
 - "comment mettre a jour mon workspace apres une nouvelle release ?"
 - "comment generer des images avec l'IA dans mon projet StreamTeX ?"
+- "comment reporter un bug dans StreamTeX ?"
+- "comment creer une issue GitHub depuis Claude ?"
 
 ---
 
@@ -177,26 +181,27 @@ stx lint -- --fix           # Auto-fix des problemes de lint
 ### Workspace (4 commandes essentielles)
 
 ```bash
-stx workspace init [PATH]         # Initialise un workspace (cree stx.toml + projects/)
-  --name NAME                     # Nom du workspace (defaut: nom du repertoire)
-  --preset PRESET                 # Preset d'installation: basic, user, standard (defaut), developer
+stx install                       # Initialise un workspace (cree stx.toml + projects/)
+  --preset PRESET                 # Preset: basic, user, standard (defaut), power, developer
+  --project NAME                  # Cree un projet avec ce nom
+  --template TEMPLATE             # Template CLI du projet (project, collection, slides)
 
-stx workspace update              # Pull + clone + sync + hooks + profiles + global commands
+stx update                        # Pull + clone + sync + hooks + profiles + global commands
   --skip-sync                     # Skip uv sync
   --skip-profiles                 # Skip mise a jour des profils Claude
   --dry-run                       # Affiche les etapes sans executer
   --repair                        # Active les checks de reparation (venv, __init__.py, paths)
 
-stx workspace status              # Git status de tous les repos (branche, clean/dirty, ahead/behind)
+stx status                        # Git status de tous les repos (branche, clean/dirty, ahead/behind)
 
-stx workspace upgrade PRESET      # Upgrade le workspace vers un preset superieur
-                                  # PRESET: basic, user, standard, developer
+stx install --preset PRESET       # Upgrade le workspace vers un preset superieur
+                                  # PRESET: basic, user, standard, power, developer
                                   # Ajoute les repos manquants dans stx.toml
                                   # Ne permet pas de downgrade
 ```
 
 > **Commandes deprecees** : `clone`, `sync`, `link`, `hooks` fonctionnent encore
-> mais affichent un avertissement et redirigent vers `stx workspace update`.
+> mais affichent un avertissement et redirigent vers `stx update`.
 
 ### Claude profiles
 
@@ -224,7 +229,7 @@ stx claude check                  # Verifie la synchronisation de tous les profi
 stx project new NAME              # Scaffold un nouveau projet StreamTeX
   --profile PROFILE               # Profil Claude (defaut: "project")
   --collection                    # Mode collection (st_collection au lieu de st_book)
-  --template [project|collection] # Copie un template riche depuis streamtex-docs/templates/
+  --template [project|collection|slides]  # Copie un template riche depuis streamtex-docs/templates/
                                   # (requiert un workspace avec streamtex-docs clone)
   --no-git                        # Skip git init
   --no-sync                       # Skip uv sync
@@ -235,6 +240,15 @@ stx project validate [PATH]       # Valide la structure d'un projet (10 checks)
                                   # .streamlit/config.toml, enableStaticServing,
                                   # pyproject.toml, .claude/, CLAUDE.md,
                                   # static/images/, block files def build
+
+stx project upgrade [PATH]        # Upgrade un projet vers la version courante de StreamTeX
+  --check                         # Verification de compatibilite seulement (pas de modifications)
+  --dry-run                       # Affiche les changements sans les appliquer
+  --skip-sync                     # Skip uv sync apres l'upgrade
+  --skip-claude                   # Skip la mise a jour du profil Claude
+                                  # Systeme de migrations versionnees (structurelles)
+                                  # + verification de compatibilite AST-based
+                                  # Utiliser /stx-migrate pour l'assistance Claude sur les fixes
 ```
 
 ### Deploy
@@ -306,17 +320,17 @@ stx bib generate-stubs SOURCES... # Genere un module BibRefs type pour l'IDE
 mkdir streamtex-dev && cd streamtex-dev
 
 # 2. Initialiser le workspace
-stx workspace init .
+stx install .
 
 # 3. Tout installer (clone + sync + hooks + profiles + global commands)
-stx workspace update
+stx update
 
 # 4. Verifier l'etat
-stx workspace status
+stx status
 
 # 5. (Optionnel) Upgrader vers un preset superieur
-stx workspace upgrade developer    # Ajoute les repos manquants (library, docs, claude)
-stx workspace update               # Clone + sync les nouveaux repos
+stx install --preset developer     # Ajoute les repos manquants (library, docs, claude)
+stx update                         # Clone + sync les nouveaux repos
 ```
 
 ### 4.2 Creation d'un nouveau projet
@@ -332,6 +346,9 @@ stx project new mon-projet --template project
 #   book.py, blocks/, custom/, .streamlit/, pyproject.toml, setup.py, .gitignore
 #   + git init + uv sync + profil Claude "project"
 
+# Presentation slides (fullscreen 16/9, footer, navigation)
+stx project new ma-presentation --template slides
+
 # Mode collection (hub multi-projets)
 stx project new mon-hub --collection
 stx project new mon-hub --template collection    # version riche
@@ -341,8 +358,13 @@ stx project validate projects/stx-mon-projet/
 
 # Lancer le projet
 cd projects/stx-mon-projet/
-uv run streamlit run book.py
+stx run
 ```
+
+> **Note** : les templates CLI (`--template project|collection|slides`) sont des repertoires
+> physiques copies depuis `streamtex-docs/templates/`. Les templates stx-designer
+> (`/stx-designer:init --template presentation|course`) sont des blueprints Claude AI
+> qui generent le projet interactivement.
 
 ### 4.2b Assistance Claude — commandes stx-designer
 
@@ -356,11 +378,11 @@ claude
 # Initialiser un projet complet depuis une description en langage naturel
 > /stx-designer:init cours Docker pour debutants, 8 slides, style sombre
 # → Claude propose la structure (8 blocks avec blueprints), demande confirmation,
-#   puis genere tous les fichiers (book.py, blocks/bck_01_*.py ... bck_08_*.py,
+#   puis genere tous les fichiers (book.py, blocks/bck_title.py ... bck_conclusion.py,
 #   custom/styles.py adapte)
 
 # Avec un template specifique (presentation live, collection, cours)
-> /stx-designer:init --presentation conference AI4SE, 12 slides, palette bleu/violet
+> /stx-designer:init --presentation conference AI4SE, 12 slides, palette bleu/violet, PresentationConfig fullscreen
 > /stx-designer:init --collection hub de cours avec 3 sous-projets
 > /stx-designer:init --course Python fundamentals, 6 chapitres avec exercices
 
@@ -376,7 +398,7 @@ claude
 
 # Auditer la qualite
 > /stx-designer:audit --all
-> /stx-designer:audit --target bck_04_text_styles conformite projection
+> /stx-designer:audit --target bck_text_styles conformite projection
 
 # Corriger automatiquement les problemes
 > /stx-designer:fix --all
@@ -395,7 +417,8 @@ claude
 |-----------|-----------|-------------|
 | stx-designer (5) | init, update, audit, fix, tool | Cycle de vie complet du projet |
 | Developer (2) | test-run, lint | Tests et linting |
-| Skills (6) | visual-design-rules, slide-design-rules, style-conventions, streamtex-quick-reference, block-blueprints, testing-patterns | Regles de conception |
+| Project (1) | issue | Creer des issues GitHub avec metadata |
+| Skills (8) | visual-design-rules, slide-design-rules, style-conventions, streamtex-quick-reference, block-blueprints, testing-patterns, stx-migrate, docs-lookup | Regles de conception |
 | Agents (3) | slide-designer, slide-reviewer, project-architect | Agents specialises |
 | Templates (4) | project, presentation, collection, course | Templates pour init |
 | Tools (1) | survey-convert | Outils specialises |
@@ -549,7 +572,7 @@ mise a jour des skills, standards, etc.), la commande unifiee fait tout :
 
 ```bash
 cd streamtex-dev/
-stx workspace update          # git pull + uv sync + profils + commandes globales
+stx update                    # git pull + uv sync + profils + commandes globales
 stx claude check              # verifier que tout est synchronise
 ```
 
@@ -569,7 +592,7 @@ L'installeur et la commande `update` copient ces fichiers depuis `streamtex-clau
 Les fichiers partages (`references/` et `commands/`) sont proteges en
 lecture seule (0o444) pour signaler qu'ils sont geres automatiquement.
 
-> **Commandes globales** : `stx workspace update` copie aussi `shared/commands/`
+> **Commandes globales** : `stx update` copie aussi `shared/commands/`
 > vers `~/.claude/commands/`, rendant `/stx-guide` accessible depuis n'importe
 > quel repertoire, meme sans profil Claude installe.
 
@@ -615,7 +638,7 @@ uv sync                       # Installe pre-commit (dev dep)
 uv run pre-commit install     # Active le hook git
 
 # Installation dans tout le workspace
-stx workspace update           # Tous les repos + projects/
+stx update                     # Tous les repos + projects/
 
 # Lancer manuellement sur tous les fichiers
 uv run pre-commit run --all-files
@@ -624,6 +647,10 @@ uv run pre-commit run --all-files
 > `stx project new` genere automatiquement `.pre-commit-config.yaml` et installe le hook.
 
 ### 4.9 Travailler avec les blocks
+
+> **Convention de nommage** : les fichiers block utilisent des noms descriptifs
+> (`bck_title.py`, `bck_containers.py`), jamais de prefixes numeriques (`bck_01_*`).
+> L'ordre est defini par `st_book([...])` dans `book.py`.
 
 **Structure d'un block (`blocks/bck_example.py`)** :
 
@@ -735,10 +762,10 @@ stx claude check           # tout doit etre "up to date"
 
 | Changement | Quoi publier | Action utilisateur |
 |---|---|---|
-| Librairie seulement | PyPI (phase 2) | `uv tool install "streamtex[cli]" -U` + `stx workspace update` |
-| Profils Claude seulement | git push (phase 3) | `stx workspace update` |
-| Librairie + profils | Phases 2 + 3 + 4 | `uv tool install "streamtex[cli]" -U` + `stx workspace update` |
-| Docs seulement | git push (phase 3) | `stx workspace update` (Render deploie automatiquement) |
+| Librairie seulement | PyPI (phase 2) | `uv tool install "streamtex[cli]" -U` + `stx update` |
+| Profils Claude seulement | git push (phase 3) | `stx update` |
+| Librairie + profils | Phases 2 + 3 + 4 | `uv tool install "streamtex[cli]" -U` + `stx update` |
+| Docs seulement | git push (phase 3) | `stx update` (Render deploie automatiquement) |
 
 ---
 
@@ -760,14 +787,14 @@ uv tool install "streamtex[cli]" -U
 
 ```bash
 cd streamtex-dev/
-stx workspace update
+stx update
 # → git pull tous les repos, uv sync, installe commandes globales, met a jour profils Claude
 ```
 
 Fine-grained control :
 ```bash
-stx workspace update --skip-sync      # sauter uv sync
-stx workspace update --skip-profiles  # sauter la mise a jour des profils Claude
+stx update --skip-sync      # sauter uv sync
+stx update --skip-profiles  # sauter la mise a jour des profils Claude
 ```
 
 **Etape 3 — Verifier**
@@ -780,7 +807,7 @@ stx claude check             # doit afficher "up to date" pour chaque projet
 
 ```bash
 uv tool install "streamtex[cli]"
-stx workspace init . && stx workspace update
+stx install . && stx update
 stx project new mon-projet
 # → derniere version PyPI + derniers profils GitHub
 ```
@@ -844,6 +871,358 @@ lors des reruns Streamlit.
 
 ---
 
+## Section 4c — Mode Presentation Fullscreen (topic: `presentation`)
+
+StreamTeX offre un mode presentation fullscreen 16/9 pour creer des slides
+directement dans Streamlit, sans paginate.
+
+### Configuration (book.py)
+
+```python
+from streamtex import (
+    st_book, PresentationConfig, set_presentation_config,
+    SlideBreakConfig, SlideBreakMode, set_slide_break_config,
+    MarkerConfig, add_presentation_options, st_presentation_footer,
+)
+
+# 1. Configurer le mode presentation
+set_presentation_config(PresentationConfig(
+    title="My Presentation",
+    aspect_ratio="16/9",
+    footer=True,
+    center_content=True,
+    hide_streamlit_header=True,
+))
+
+# 2. Configurer les slide breaks en mode fullscreen
+set_slide_break_config(SlideBreakConfig(
+    fullscreen=True,
+    mode=SlideBreakMode.HIDDEN,
+    marker=True,
+))
+
+# 3. Ajouter les options de presentation dans la sidebar
+add_presentation_options()
+
+# 4. Orchestrer le book (SANS paginate)
+marker_config = MarkerConfig(
+    auto_marker_on_toc=1,
+    next_keys=["PageDown"],
+    prev_keys=["PageUp"],
+)
+st_book([blocks.bck_title, blocks.bck_content, ...],
+        paginate=False, marker_config=marker_config)
+```
+
+### Footer de presentation
+
+`st_presentation_footer()` affiche un pied de page avec le numero de slide,
+le total et le titre de la presentation :
+
+```python
+st_presentation_footer(current_slide=3, total_slides=12, title="My Talk")
+```
+
+### Options de presentation (sidebar)
+
+`add_presentation_options()` ajoute des controles dans la sidebar pour
+le presentateur : activer/desactiver le mode fullscreen, ajuster les marges,
+et controler l'affichage du footer.
+
+### Navigation clavier
+
+- **PageDown** : slide suivante
+- **PageUp** : slide precedente
+
+> **Important** : `PresentationConfig` est incompatible avec `paginate=True`.
+> Le mode fullscreen utilise le mode continu avec `st_slide_break()` pour
+> separer les slides visuellement.
+
+---
+
+## Section 4d — Systeme de styles (topic: `styles`)
+
+StreamTeX utilise un systeme de styles compose de la classe `Style` qui encapsule
+du CSS inline, avec composition par operateurs et surcharge par themes.
+
+### Architecture
+
+```
+Style("css", "style_id")       # Classe de base — encapsule du CSS + un identifiant theme
+ListStyle(css, style_id, symbols)  # Extension pour listes avec symboles custom
+StyleGrid(css_grid)            # Matrice de styles pour cellules de grids/tables
+```
+
+**Organisation des styles integres** (accessible via `from streamtex.styles import Style as ns`) :
+
+| Categorie | Acces | Contenu |
+|-----------|-------|---------|
+| Tailles texte | `ns.text.sizes` | `GIANT`..`tiny` (pt, px, em) + factory `size()` |
+| Couleurs texte | `ns.text.colors` | 150+ couleurs CSS nommees |
+| Polices | `ns.text.fonts` | `font_arial`, `font_georgia`, `font_monospace`... |
+| Poids | `ns.text.weights` | `bold_weight`, `light_weight`, `normal_weight` |
+| Decorations | `ns.text.decors` | `italic_text`, `underline_text`, `strike_text` |
+| Alignements | `ns.text.alignments` | `center_align`, `right_align`, `justify_align` |
+| Fonds | `ns.container.bg_colors` | 150+ couleurs de fond |
+| Paddings | `ns.container.paddings` | `tiny`..`Giant` (pt, em) + factory `size()` |
+| Margins | `ns.container.margins` | `tiny`..`Giant` (pt, em) + factory `size()` |
+| Bordures | `ns.container.borders` | styles + epaisseurs + factory `size()`, `color()` |
+| Layouts | `ns.container.layouts` | `inline`, `center`, `span`, `col_layout`, `row_layout` |
+| Flex | `ns.container.flex` | `row_flex`, `col_flex`, `center_flex`, `wrap_flex` |
+| Grids | `ns.container.grid` | `gap_0`..`gap_48` |
+| Positions | `ns.container.positions` | `relative`, `absolute`, `sticky` + `top()`, `left()`... |
+
+**Raccourcis StxStyles** (via `from streamtex import *`, alias `s`) :
+
+```python
+s.bold, s.italic, s.center_txt          # Style de base
+s.GIANT, s.Huge, s.LARGE, s.Large       # Tailles rapides (196pt..32pt)
+s.large, s.big, s.medium, s.small       # (24pt..6pt)
+```
+
+### Creer un style personnalise
+
+```python
+from streamtex.styles import Style
+
+# Style CSS arbitraire — n'importe quelle propriete CSS
+heading = Style("font-size: 40px; font-weight: bold;", "heading")
+st_write(heading, "Mon Titre")
+
+# Via factory method (plus idiomatique)
+heading = s.text.sizes.size(40) + s.bold
+st_write(heading, "Mon Titre")
+
+# Taille en px au lieu de pt
+heading_px = s.text.sizes.size("40px")
+
+# Padding custom (convention CSS : 1 a 4 valeurs)
+pad = s.container.paddings.size(12, 24)       # 12pt top/bottom, 24pt left/right
+
+# Margin custom
+centered = s.container.margins.size("auto")   # margin: auto
+
+# Bordure avec couleur
+border = s.container.borders.solid_border + s.container.borders.size(2) + s.container.borders.color(s.text.colors.blue)
+```
+
+### Composition de styles (operateurs + et -)
+
+```python
+# Combiner des styles avec +
+title_style = s.bold + s.LARGE + s.center_txt + Style("color: #4A90D9;", "blue")
+
+# Retirer des proprietes avec -
+no_bold = title_style - s.bold   # retire font-weight du style compose
+
+# Combiner avec du CSS brut (string)
+custom = s.bold + "letter-spacing: 2px;"
+```
+
+### Styles de projet (`custom/styles.py`)
+
+Chaque projet definit ses styles reutilisables dans `custom/styles.py` :
+
+```python
+from streamtex.styles import Style, StxStyles
+
+class Styles(StxStyles):
+    # Styles composes reutilisables
+    heading = Style("font-size: 40px; font-weight: bold; color: #4A90D9;", "heading")
+    subheading = Style("font-size: 28px; font-weight: 300; color: #666;", "subheading")
+    accent = Style("color: #E74C3C; font-weight: bold;", "accent")
+    card = Style("background-color: #f8f9fa; padding: 24px; border-radius: 8px;", "card")
+```
+
+Utilisation dans les blocks :
+
+```python
+from custom.styles import Styles as s
+
+class BlockStyles:
+    title = s.heading + s.center_txt
+    body = s.Large + s.center_txt
+bs = BlockStyles
+
+def build():
+    with st_block(s.card):
+        st_write(bs.title, "Titre", tag=t.div, toc_lvl="1")
+        st_write(bs.body, "Contenu")
+```
+
+### Themes (surcharge globale par `style_id`)
+
+Le dictionnaire global `theme` permet de surcharger n'importe quel style par son `style_id` :
+
+```python
+from streamtex.styles.core import theme
+
+# Definir un theme sombre
+dark_theme = {
+    "heading": "font-size: 40px; font-weight: bold; color: #E0E0E0;",
+    "card": "background-color: #1a1a2e; padding: 24px; border-radius: 8px;",
+    "LARGE_size": "font-size: 42pt;",   # Surcharge une taille integree
+}
+
+# Activer le theme
+theme.update(dark_theme)
+```
+
+Quand un `Style` est rendu, il cherche d'abord dans `theme[style_id]` avant
+d'utiliser son CSS par defaut. Le `style_id` est la cle.
+
+**Creer un style "themable"** avec `Style.create()` :
+
+```python
+# Style.create() copie le CSS mais assigne un nouveau style_id
+my_title = Style.create(s.bold + s.Large, "my_title")
+
+# Maintenant on peut surcharger "my_title" via le theme
+theme["my_title"] = "font-size: 48px; font-weight: 900; color: gold;"
+```
+
+### Variables CSS (tailles responsives)
+
+Les tailles integrees utilisent des variables CSS avec fallback :
+
+```python
+s.Large  # → font-size: var(--stx-Large-size, 32pt);
+s.huge   # → font-size: var(--stx-huge-size, 64pt);
+```
+
+On peut redefinir ces variables dans `.streamlit/config.toml` ou via CSS inject
+pour adapter toutes les tailles d'un coup sans toucher au code Python.
+
+### ListStyle (symboles de listes)
+
+```python
+from streamtex.styles.core import ListStyle
+
+# Symboles custom qui cyclent selon le niveau d'imbrication
+arrows = ListStyle(symbols=["→", "◦", "■"])
+with st_list(list_style=arrows) as l:
+    with l.item(): st_write("Niveau 1 → ")
+    with l.item():
+        st_write("Niveau 1 → ")
+        with st_list(list_style=arrows) as l2:
+            with l2.item(): st_write("Niveau 2 ◦ ")
+```
+
+### StyleGrid (styles par cellule dans les grids)
+
+```python
+from streamtex.styles.core import StyleGrid
+
+# Notation Excel — appliquer un style a une plage de cellules
+header_grid = StyleGrid.create("A1:C1", s.bold + s.center_txt)
+accent_grid = StyleGrid.create("A2:A4", Style("color: red;", "accent"))
+
+# Combiner des grids
+combined = header_grid + accent_grid
+
+# Utilisation avec st_grid
+st_grid(data, cols=3, cell_styles=combined)
+```
+
+Operateurs StyleGrid : `+` (combiner), `-` (retirer), `*` (remplacer).
+
+### Resume — comment repondre a "je veux un heading en 40px"
+
+```python
+# Methode 1 : Style direct
+st_write(Style("font-size: 40px; font-weight: bold;", "h1"), "Mon Titre")
+
+# Methode 2 : Factory + composition
+st_write(s.text.sizes.size("40px") + s.bold, "Mon Titre")
+
+# Methode 3 : Style reutilisable dans custom/styles.py
+class Styles(StxStyles):
+    h1 = Style("font-size: 40px; font-weight: bold;", "h1")
+# puis: st_write(s.h1, "Mon Titre")
+
+# Methode 4 : Themable
+class Styles(StxStyles):
+    h1 = Style.create(s.text.sizes.size("40px") + s.bold, "h1")
+# theme["h1"] = "font-size: 48px; ..." pour surcharger globalement
+```
+
+---
+
+## Section 4e — Issues GitHub (topic: `issues`)
+
+La commande `/stx-issue` permet de creer des issues GitHub directement depuis Claude,
+avec collecte automatique des metadata d'environnement.
+
+### Prerequis
+
+```bash
+# Installer GitHub CLI
+brew install gh          # macOS
+
+# S'authentifier
+gh auth login
+
+# Verifier
+gh auth status
+```
+
+### Usage
+
+```bash
+# Reporter un bug
+> /stx-issue bug st_grid ne s'affiche pas quand cols="1fr 2fr" sur mobile
+
+# Demander une feature
+> /stx-issue feature Ajouter un toggle dark mode dans la sidebar st_book
+
+# Poser une question
+> /stx-issue question Comment utiliser st_collection avec des routes custom ?
+
+# Ameliorer la documentation
+> /stx-issue docs Ajouter un exemple pour st_overlay positioning
+
+# Aide
+> /stx-issue --help
+```
+
+### Types d'issues
+
+| Type | Label GitHub | Fallback titre |
+|------|-------------|----------------|
+| `bug` | `bug` | `[Bug]` |
+| `feature` | `enhancement` | `[Feature]` |
+| `question` | `question` | `[Question]` |
+| `docs` | `documentation` | `[Docs]` |
+
+### Metadata collectees automatiquement
+
+- Version StreamTeX, Python, OS, uv
+- Nom du projet, preset du workspace, profil Claude
+- Branche git et dernier commit
+
+### Routage automatique
+
+La commande detecte le repo cible automatiquement :
+- Bugs sur l'API (`st_*`, erreurs Python) → `streamtex`
+- Issues sur la documentation (manuels, blocs) → `streamtex-docs`
+- Issues sur les profils Claude (commandes, installation) → `streamtex-claude`
+- En cas d'ambiguite, la commande demande de choisir
+
+### Securite
+
+- Preview complete avant chaque creation (confirmation obligatoire)
+- Pas de donnees sensibles dans le body (cles API, tokens filtres)
+- Labels appliques seulement si l'utilisateur a les droits d'ecriture
+- Langue par defaut : anglais (francais sur demande explicite)
+
+### GitHub Issue Templates
+
+Les 3 repos StreamTeX incluent des templates d'issues (`.github/ISSUE_TEMPLATE/`)
+pour les bug reports, feature requests, questions et ameliorations de documentation.
+Ces templates sont utilises aussi depuis l'interface web GitHub.
+
+---
+
 ## Section 5 — Gotchas connus
 
 ### 1. `from streamtex import *` masque `list()`
@@ -891,6 +1270,10 @@ lors des reruns Streamlit.
 **Solution** : utiliser des URLs absolues vers GitHub (`https://github.com/nicolasguelfi/streamtex/blob/main/AI_GUIDE.md`).
 `stx publish check` detecte automatiquement les liens relatifs (check "README links").
 
+### 12. PresentationConfig + paginate=True = conflit
+**Probleme** : le mode presentation fullscreen necessite le mode continu (defilement vertical avec slide breaks), pas le mode pagine.
+**Solution** : toujours utiliser `paginate=False` (defaut) avec `PresentationConfig`. Le mode fullscreen utilise `st_slide_break()` pour separer les slides visuellement, avec navigation clavier (PageDown/PageUp).
+
 ---
 
 ## Section 6 — Carte de reference rapide
@@ -899,13 +1282,16 @@ lors des reruns Streamlit.
 
 | Tache | Commande |
 |-------|----------|
-| Initialiser un workspace | `stx workspace init .` |
-| Tout mettre a jour | `stx workspace update` |
-| Etat du workspace | `stx workspace status` |
-| Upgrader le preset | `stx workspace upgrade developer` |
+| Initialiser un workspace | `stx install .` |
+| Tout mettre a jour | `stx update` |
+| Etat du workspace | `stx status` |
+| Upgrader le preset | `stx install --preset developer` |
 | Creer un projet (minimal) | `stx project new <name>` |
 | Creer un projet (template riche) | `stx project new <name> --template project` |
+| Creer une presentation (slides 16/9) | `stx project new <name> --template slides` |
 | Valider un projet | `stx project validate .` |
+| Upgrader un projet | `stx project upgrade .` |
+| Verifier compatibilite | `stx project upgrade . --check` |
 | Lancer les tests | `stx test -v` |
 | Lancer le linter | `stx lint` |
 | Installer un profil Claude | `stx claude install <profile> .` |
@@ -923,18 +1309,28 @@ lors des reruns Streamlit.
 | Publier sur PyPI (local) | `stx publish pypi .` (lit `.env` auto) |
 | Publier sur PyPI (CI) | `gh release create vX.Y.Z` (OIDC) |
 | Generer stubs bib | `stx bib generate-stubs refs.bib` |
-| Lancer un projet | `uv run streamlit run book.py` |
+| Lancer un projet | `stx run` |
+
+### Commandes Claude (issues)
+
+| Tache | Commande |
+|-------|----------|
+| Reporter un bug | `/stx-issue bug <description>` |
+| Demander une feature | `/stx-issue feature <description>` |
+| Poser une question | `/stx-issue question <description>` |
+| Ameliorer la doc | `/stx-issue docs <description>` |
+| Aide | `/stx-issue --help` |
 
 ### Commandes Claude (coherence)
 
 | Tache | Commande |
 |-------|----------|
-| Audit complet (10 checks) | `/coherence:audit` ou `/coherence:audit all` |
-| Audit API + cheatsheet | `/coherence:audit library` |
-| Audit blocs + manuels | `/coherence:audit docs` |
-| Audit sync profils + stx-guide | `/coherence:audit profiles` |
-| Audit blocs + structure + templates | `/coherence:audit blocks` |
-| Audit langue anglaise | `/coherence:audit language` |
+| Audit complet (19 checks) | `/stx-coherence:audit` ou `/stx-coherence:audit all` |
+| Audit API + cheatsheet | `/stx-coherence:audit library` |
+| Audit blocs + manuels | `/stx-coherence:audit docs` |
+| Audit sync profils + stx-guide | `/stx-coherence:audit profiles` |
+| Audit blocs + structure + templates | `/stx-coherence:audit blocks` |
+| Audit langue anglaise | `/stx-coherence:audit language` |
 
 ### Commandes GitHub CLI (gh)
 

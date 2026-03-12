@@ -1,4 +1,4 @@
-# /project:project-customize — Customize a StreamTeX project
+# /stx-project:project-customize — Customize a StreamTeX project
 
 Arguments: $ARGUMENTS (natural language description of desired changes)
 
@@ -124,7 +124,7 @@ Applied modifications:
   .streamlit/config.toml — theme switched to light
   book.py                — TOC + pagination enabled
 
-Test: uv run streamlit run book.py
+Test: stx run
 ```
 
 ## Rules

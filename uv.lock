@@ -2219,7 +2219,7 @@ wheels = [
 
 [[package]]
 name = "streamtex"
-version = "0.4.6"
+version = "0.4.17"
 source = { editable = "../../streamtex" }
 dependencies = [
     { name = "beautifulsoup4" },

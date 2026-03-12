@@ -9,8 +9,9 @@ When the user says **"stream"**, **"la librairie"**, **"st"**, or **"stx"**, the
 
 ## Environment (MANDATORY)
 This project uses **uv** for dependency management. You MUST:
-- **ALWAYS** prefix Python commands with `uv run` (e.g. `uv run pytest`, `uv run streamlit run ...`)
+- **ALWAYS** prefix Python commands with `uv run` (e.g. `uv run pytest`)
 - **NEVER** call `python`, `pip`, `pytest`, `streamlit`, or `ruff` directly — always go through `uv run`
+- Use `stx run` to launch projects (shortcut for `uv run streamlit run book.py`)
 - Use `uv add <package>` to add dependencies, `uv add --group dev <package>` for dev deps
 - Run `uv sync` if `uv.lock` or `pyproject.toml` changed
 
@@ -37,7 +38,7 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 - Section titles: **80-96pt**
 - Content: **5-7 words/bullet**, 3 max per section
 - Helper boxes: **Forbidden** (direct st_write only)
-- See `.claude/designer/ros_designer_default/skills/presentation-design-rules.md`
+- See `.claude/designer/presentation/skills/presentation-design-rules.md`
 {% endif %}
 ## Key Components
 
@@ -72,7 +73,7 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 
 ## Running the App
 ```bash
-uv run streamlit run book.py
+stx run
 ```
 
 ## Project Structure
@@ -89,6 +90,30 @@ uv run streamlit run book.py
 └── .streamlit/config.toml  # Streamlit config
 ```
 
+## Documentation Lookup (when answering user questions)
+
+When the user asks a question about StreamTeX usage, patterns, or features:
+
+1. **Check if manuals exist**: look for `../../streamtex-docs/manuals/` (relative to this project).
+   Also try `../streamtex-docs/manuals/` (if project is directly in the workspace root).
+2. **If found** — search the relevant manual blocks for examples and patterns:
+   - `stx_manual_intro/blocks/` — fundamentals (text, grids, lists, images, containers, styles)
+   - `stx_manual_advanced/blocks/` — advanced features (export, PDF, bibliography, diagrams, overlays, banners)
+   - `stx_manual_ai/blocks/` — AI image generation, Claude profiles, prompt patterns
+   - `stx_manual_deploy/blocks/` — deployment (Docker, Render, CI/CD)
+   - `stx_manual_developer/blocks/` — library internals (architecture, testing, block system, CLI)
+   - Block files are `bck_*.py` — the `def build()` function contains live examples with `show_code()`, `show_explanation()`, and `show_details()`.
+3. **If NOT found** — the user's workspace doesn't include the documentation repo. Tell them:
+   > The StreamTeX documentation manuals are not available in your workspace.
+   > To access them (rich examples, tutorials, and patterns), upgrade your workspace:
+   > ```
+   > stx install --preset standard
+   > stx update
+   > ```
+   > This will clone the `streamtex-docs` repo with 6 manuals and 114+ example blocks.
+
+Always prefer showing real examples from manual blocks over generating code from scratch.
+
 ## Workflows — stx-designer Commands
 
 The `stx-designer` commands cover the full project lifecycle:
@@ -101,5 +126,5 @@ The `stx-designer` commands cover the full project lifecycle:
 6. **Fix issues** -> `/stx-designer:fix --all` or `/stx-designer:fix --target bck_intro`
 7. **Specialized tools** -> `/stx-designer:tool survey-convert`
 8. **Help** -> `/stx-designer:init --help` (cheatsheet for all commands)
-9. **Testing** -> `uv run pytest tests/ -v` (`/developer:test-run`)
-10. **Linting** -> `uv run ruff check` (`/developer:lint`)
+9. **Testing** -> `uv run pytest tests/ -v` (`/stx-developer:test-run`)
+10. **Linting** -> `uv run ruff check` (`/stx-developer:lint`)

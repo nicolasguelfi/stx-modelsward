@@ -51,6 +51,7 @@ import blocks
 ## 5. sx vs st — When to Use What
 - **ALL layout and content** -> `stx.*`: st_write, st_image, st_grid, st_list, st_block, st_span, st_space, st_br, st_overlay, st_html
 - **AI image generation** -> `stx.*`: st_ai_image, st_ai_image_widget, generate_image (requires `streamtex[ai]`)
+- **Presentation mode** -> `stx.*`: st_presentation_footer, add_presentation_options
 - **Data visualization (export-aware)** -> `stx.*`: st_dataframe, st_table, st_metric, st_json, st_graphviz, st_line_chart, st_bar_chart, st_area_chart, st_scatter_chart, st_audio, st_video
 - **ONLY interactivity** -> `st.*`: buttons, inputs, sliders, forms, selectbox, checkbox
 
@@ -169,7 +170,7 @@ def build():
 ```
 
 ## 8. Naming Conventions
-- **Block files**: `bck_[description]_[suffix].py`
+- **Block files**: `bck_<descriptive_topic>.py` — never use numeric prefixes (`bck_01_`, `bck_02_`). Slide order is defined in `st_book([...])`, not by filename.
 - **Image assets**: `[block_filename_no_ext]_image_[00index].[ext]`
 - **Style names**: English-only, generic, descriptive (`title_giant_green`, `subtitle_blue_01`)
 - **Style classes**: `BlockStyles` or `BStyles`, aliased as `bs = BlockStyles`
@@ -235,17 +236,17 @@ with st_grid(cols=2, grid_style=grid_gap):
 
 ## 10. Running the App
 ```bash
-# Single project
-uv run streamlit run projects/<project_name>/book.py
+# Single project (from project directory)
+stx run                                       # auto-detects book.py
+stx run --port 8510 --browser chrome          # custom port + browser
 
-# Manual projects (documentation/manuals/)
-uv run streamlit run documentation/manuals/stx_manual_intro/book.py
-uv run streamlit run documentation/manuals/stx_manual_advanced/book.py
-uv run streamlit run documentation/manuals/stx_manuals_collection/book.py
+# Manual projects (from manual directory)
+cd manuals/stx_manual_intro && stx run
+cd manuals/stx_manual_advanced && stx run
 
 # Multiple projects simultaneously (different ports)
-./run-test-projects.sh --intro --advanced --collection
-./run-test-projects.sh --all                  # Launch all 3 projects
+./run-manuals.sh --intro --advanced --collection
+./run-manuals.sh --all                        # Launch all manuals
 ```
 
 ## 11. Deployment
@@ -320,7 +321,7 @@ uv run pre-commit install     # Activates the git hook
 
 **Workspace-wide install:**
 ```bash
-stx workspace update           # Installs hooks in all repos + projects/
+stx update                     # Installs hooks in all repos + projects/
 ```
 
 `stx project new` automatically generates `.pre-commit-config.yaml` and installs hooks.
@@ -532,6 +533,20 @@ marker_config = MarkerConfig(
 st_book([...], toc_config=toc, marker_config=marker_config)
 ```
 
+### MarkerConfig fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `show_nav_ui` | `bool` | `True` | Show/hide the floating navigation widget |
+| `auto_marker_on_toc` | `int \| bool` | `False` | Bridge TOC headings to markers (True=all, int N=up to level N) |
+| `nav_position` | `str` | `"bottom-right"` | Widget position: `"bottom-right"` or `"bottom-center"` |
+| `nav_label_chars` | `int` | `40` | Max characters for current marker label (0 to hide) |
+| `popup_open` | `bool` | `False` | Initial state of the marker popup list |
+| `next_keys` | `list[str]` | `["PageDown"]` | Keys to navigate forward (supports modifier syntax) |
+| `prev_keys` | `list[str]` | `["PageUp"]` | Keys to navigate backward |
+| `draggable` | `bool` | `False` | Allow dragging the widget anywhere (position in localStorage) |
+| `collapsible` | `bool` | `False` | Show ⋮ button to collapse/expand (state in localStorage) |
+
 ### Per-heading overrides
 
 Use `marker=False` on `st_write()` to exclude specific headings (appendices,
@@ -598,6 +613,11 @@ st_book([...],
 )
 ```
 
+All PdfConfig fields: `mode` (PdfMode), `format` ("A4"), `landscape` (True),
+`margin_top/bottom/left/right` ("10mm"/"15mm"), `print_background` (True),
+`scale` (1.0), `header_template`/`footer_template` (""), `page_numbers` (False),
+`theme_bg` ("#fff"), `theme_text` ("#333").
+
 When `export=True` (default), the sidebar shows a "Download as..." panel where the user can
 adjust all PDF parameters before generating. The `pdf_config` values are used as defaults.
 
@@ -657,6 +677,21 @@ BannerConfig(
     show_arrows=False,
 )
 ```
+
+### BannerConfig fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mode` | `BannerMode` | `FULL` | `FULL`, `COMPACT`, or `HIDDEN` |
+| `color` | `str` | `"rgba(211,47,47,0.8)"` | Background color |
+| `text_color` | `str` | `"white"` | Text color |
+| `font_size` | `str \| None` | `None` | Font size (auto if None) |
+| `font_weight` | `str \| None` | `None` | Font weight (auto if None) |
+| `padding` | `str \| None` | `None` | CSS padding (auto if None) |
+| `border_radius` | `str \| None` | `None` | CSS border-radius (auto if None) |
+| `show_title` | `bool` | `True` | Show block title in banner |
+| `show_arrows` | `bool` | `True` | Show prev/next arrows |
+| `show_dividers` | `bool \| None` | `None` | Show separators (auto per mode if None) |
 
 Fields set to `None` use mode-specific auto values.
 Explicit values always override auto defaults.
