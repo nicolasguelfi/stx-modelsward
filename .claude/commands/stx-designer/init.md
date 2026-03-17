@@ -131,6 +131,7 @@ For each block:
    - Configure `TOCConfig(numbering=NumberingMode.SIDEBAR_ONLY, sidebar_max_level=2, search=True)`
    - Configure `st_book()` with the list of blocks in order
    - Enable chosen features (pagination, TOC, banner, marker)
+   - Add default `exports=[...]` config with `ExportMode.NEVER` (HTML + PDF), so users can enable auto-export later by changing `NEVER` to `ALWAYS`
 
 3. Adapt `custom/styles.py`:
    - Define the chosen color palette
@@ -177,6 +178,7 @@ Next steps:
 - Always include a title block (Blueprint 1) and a conclusion block (Blueprint 10)
 - No raw HTML/CSS — use only `stx.*` functions
 - No hardcoded black/white — use the style system
+- Use the most specific `stx.*` component for each content type: `st_list()` for lists (never `st_write("- item")`), `st_grid()` for layouts, `st_image()` for images, `st_code()` for code blocks
 - If the project is already scaffolded (`book.py` exists), adapt rather than recreate
 
 ## Constraints
