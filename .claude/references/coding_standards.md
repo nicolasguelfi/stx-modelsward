@@ -27,7 +27,25 @@ project_name/
     themes.py              # Theme overrides (dict)
   static/images/           # Image assets
   .streamlit/config.toml   # MUST have enableStaticServing = true
+  .claude/                 # Claude Code configuration
+    references/            # Read-only — coding standards, cheatsheet
+    commands/              # Read-only — slash commands (+ user custom commands)
+    developer/             # Read-only — skills, agents
+    designer/              # Read-only — skills, agents, templates, tools
+    custom/                # User personalizations (never overwritten)
+      references/          # Extra rules loaded after official ones
+      skills/              # Additional skills
+      templates/           # Custom project templates
+      README.md            # Usage instructions
 ```
+
+### `.claude/custom/` — User Customizations
+Files in `.claude/` (except `custom/`) are **read-only** — installed and updated by `stx claude update`.
+The `.claude/custom/` directory is for user-specific extensions that are **never overwritten** by updates.
+- Add rules in `custom/references/` (loaded by Claude alongside official references)
+- Add skills in `custom/skills/`
+- Add templates in `custom/templates/`
+- Custom slash commands go in `.claude/commands/` directly (Claude Code only scans that path)
 
 ## 4. Mandatory Imports
 
@@ -744,3 +762,38 @@ Explicit values always override auto defaults.
 - `banner.py` — BannerMode enum, BannerConfig dataclass, _render_banner()
 - `book.py` — Resolves banner config (banner > monties_color > banner_color),
   passes BannerConfig to _paginated_book(), calls _render_banner() for top/bottom banners.
+
+## 18. Presentation Profiles
+
+### Overview
+
+Presentation profiles let users switch between named display configurations
+(Desktop, Mobile, Presenter, etc.) at runtime via the sidebar or the floating
+navigation bar. Each profile bundles mode, layout, wrap, and slide break settings.
+
+### Recommended setup
+
+```python
+from streamtex import PresentationProfile, st_book
+
+st_book([...], presentation_profiles=PresentationProfile.desktop_mobile_preset())
+```
+
+### Factory presets
+
+```python
+PresentationProfile.desktop_mobile_preset()  # Desktop (90%, 100%) + Mobile (100%, 60%)
+PresentationProfile.responsive_preset()      # Desktop + Tablet + Mobile
+PresentationProfile.presentation_preset()    # Presenter + Audience + Handout
+```
+
+All presets default to `PAGINATED` mode. The `PresentationProfile` dataclass
+follows the same pattern as `BannerConfig` and `SlideBreakConfig`.
+
+### Architecture
+
+- `presentation_profile.py` — PresentationProfile, PageLayout, ViewMode,
+  SlideBreakDisplayConfig, ProfileConfig, apply_profile(), is_profile_modified()
+- `book.py` — Profile selectbox in sidebar Settings, profile switch detection,
+  hidden stx_prof_ buttons for floating bar JS interaction
+- `marker.py` — Phone icon popup in floating bar, profile_names/active_profile params
