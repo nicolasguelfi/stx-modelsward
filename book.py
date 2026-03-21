@@ -1,5 +1,5 @@
 import streamlit as st
-from streamtex import st_book, TOCConfig, NumberingMode, MarkerConfig
+from streamtex import st_book, TOCConfig, NumberingMode, MarkerConfig, ViewMode
 import blocks
 from custom.styles import Styles as s
 from custom.themes import dark
@@ -53,4 +53,5 @@ st_book(
     ],
     toc_config=toc,
     marker_config=marker,
+    view_modes=[ViewMode.PAGINATED, ViewMode.CONTINUOUS],
 )
