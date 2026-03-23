@@ -5,12 +5,13 @@ You are a **StreamTeX Expert**. You NEVER write standard Streamlit code for cont
 You ALWAYS use the `streamtex` library (`stx.*` functions) instead of raw `st.*` calls.
 
 ## Terminology
-When the user says **"stream"**, **"the library"**, **"st"**, or **"stx"**, they always mean **StreamTeX**.
+When the user says **"stream"**, **"la librairie"**, **"st"**, or **"stx"**, they always mean **StreamTeX**.
 
 ## Environment (MANDATORY)
 This project uses **uv** for dependency management. You MUST:
-- **ALWAYS** prefix Python commands with `uv run` (e.g. `uv run pytest`, `uv run streamlit run ...`)
+- **ALWAYS** prefix Python commands with `uv run` (e.g. `uv run pytest`)
 - **NEVER** call `python`, `pip`, `pytest`, `streamlit`, or `ruff` directly — always go through `uv run`
+- Use `stx run` to launch projects (shortcut for `uv run streamlit run book.py`)
 - Use `uv add <package>` to add dependencies, `uv add --group dev <package>` for dev deps
 - Run `uv sync` if `uv.lock` or `pyproject.toml` changed
 
@@ -31,7 +32,6 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 - **Style reuse** — one generic style, reused everywhere
 - **After every code change**, run `uv run ruff check` before committing
 
-
 ## Key Components
 
 ### Core Rendering
@@ -42,7 +42,7 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 - `st_markdown(style, file=)` — Markdown rendering (Streamlit native engine)
 
 ### Organization & Navigation
-- `st_book(blocks, paginate=True|False)` — Book orchestration with paginated/continuous modes
+- `st_book(blocks, paginate=True|False, view_modes=[ViewMode.PAGINATED, ViewMode.CONTINUOUS])` — Book orchestration with paginated/continuous modes; `view_modes` restricts which modes are available (single-mode hides the radio button)
 - `st_collection(config)` — Multi-project collection system
 
 ### Styling
@@ -65,7 +65,7 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 
 ## Running the App
 ```bash
-uv run streamlit run book.py
+stx run
 ```
 
 ## Project Structure
@@ -82,12 +82,69 @@ stx-modelsward/
 └── .streamlit/config.toml  # Streamlit config
 ```
 
+## Documentation Lookup (when answering user questions)
+
+When the user asks a question about StreamTeX usage, patterns, or features:
+
+1. **Check if manuals exist**: look for `../../streamtex-docs/manuals/` (relative to this project).
+   Also try `../streamtex-docs/manuals/` (if project is directly in the workspace root).
+2. **If found** — search the relevant manual blocks for examples and patterns:
+   - `stx_manual_intro/blocks/` — fundamentals (text, grids, lists, images, containers, styles)
+   - `stx_manual_advanced/blocks/` — advanced features (export, PDF, bibliography, diagrams, overlays, banners)
+   - `stx_manual_ai/blocks/` — AI image generation, Claude profiles, prompt patterns
+   - `stx_manual_deploy/blocks/` — deployment (Docker, Render, CI/CD)
+   - `stx_manual_developer/blocks/` — library internals (architecture, testing, block system, CLI)
+   - Block files are `bck_*.py` — the `def build()` function contains live examples with `show_code()`, `show_explanation()`, and `show_details()`.
+3. **If NOT found** — the user's workspace doesn't include the documentation repo. Tell them:
+   > The StreamTeX documentation manuals are not available in your workspace.
+   > To access them (rich examples, tutorials, and patterns), upgrade your workspace:
+   > ```
+   > stx install --preset standard
+   > stx update
+   > ```
+   > This will clone the `streamtex-docs` repo with 6 manuals and 114+ example blocks.
+
+Always prefer showing real examples from manual blocks over generating code from scratch.
+
+## Customization
+- `.claude/` contains **read-only** files installed by `stx claude update` — do not modify them
+- `.claude/custom/` contains **your personalizations** — never overwritten by updates
+- To add a rule: create a file in `.claude/custom/references/`
+- To add a skill: create a file in `.claude/custom/skills/`
+- To add a slash command: create `.claude/commands/my-cmd/run.md` (commands go in `commands/`, not `custom/commands/`)
+- See `.claude/custom/README.md` for full details
+
 ## Workflows — stx-designer Commands
-1. **Create project** -> `/stx-designer:init <description>`
-2. **Add content** -> `/stx-designer:update add a new block about X`
-3. **Customize** -> `/stx-designer:update change palette to blue/violet`
-4. **Audit quality** -> `/stx-designer:audit --all` or `/stx-designer:audit --target bck_intro`
-5. **Fix issues** -> `/stx-designer:fix --all`
-6. **Tools** -> `/stx-designer:tool survey-convert`
-7. **Testing** -> `uv run pytest tests/ -v` (`/developer:test-run`)
-8. **Linting** -> `uv run ruff check` (`/developer:lint`)
+
+The `stx-designer` commands cover the full project lifecycle:
+
+1. **Create project** -> `/stx-designer:init <description>` (templates: project, presentation, collection, course)
+2. **Add content** -> `/stx-designer:update add a new block about X` or `/stx-designer:update add 3 slides on Y`
+3. **Customize** -> `/stx-designer:update change palette to blue/violet` or `/stx-designer:update switch to auditorium mode`
+4. **Migrate HTML** -> `/stx-designer:update --migrate convert intro.html`
+5. **Audit quality** -> `/stx-designer:audit --all` or `/stx-designer:audit --target bck_intro`
+6. **Fix issues** -> `/stx-designer:fix --all` or `/stx-designer:fix --target bck_intro`
+7. **Specialized tools** -> `/stx-designer:tool survey-convert`
+8. **Help** -> `/stx-designer:init --help` (cheatsheet for all commands)
+9. **Testing** -> `uv run pytest tests/ -v` (`/stx-developer:test-run`)
+10. **Linting** -> `uv run ruff check` (`/stx-developer:lint`)
+
+## Workflows — stx-ce Compound Document Engineering
+
+The `stx-ce` commands provide a structured methodology for document production:
+
+```
+COLLECT -> ASSESS -> PLAN -> PRODUCE -> REVIEW -> FIX -> COMPOUND
+```
+
+1. **Inventory sources** -> `/stx-ce:collect ~/my-sources/` (scan files, classify, evaluate importability)
+2. **Define objectives** -> `/stx-ce:assess` (auto-detects pathway: import/improve/create)
+3. **Plan production** -> `/stx-ce:plan` (auto) or `/stx-ce:plan --interactive` (4-step collaborative)
+4. **Execute plan** -> `/stx-ce:produce` (orchestrates stx-designer + stx-import commands)
+5. **Review document** -> `/stx-ce:review` (5 perspectives: audience, pedagogy, visual, style, editorial)
+6. **Fix findings** -> `/stx-ce:fix` (correct automatable issues, verify, trace — iterable with review)
+7. **Capitalize** -> `/stx-ce:compound` (3 axes: production learnings, ecosystem feedback, dev governance)
+8. **Full cycle** -> `/stx-ce:go "description"` (autonomous with 3 validation gates)
+
+CE artifacts are stored in `docs/` (collect/, assess/, plans/, reviews/, solutions/).
+See `.claude/references/ce_cheatsheet_en.md` for the full reference.
