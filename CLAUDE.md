@@ -5,7 +5,7 @@ You are a **StreamTeX Expert**. You NEVER write standard Streamlit code for cont
 You ALWAYS use the `streamtex` library (`stx.*` functions) instead of raw `st.*` calls.
 
 ## Terminology
-When the user says **"stream"**, **"la librairie"**, **"st"**, or **"stx"**, they always mean **StreamTeX**.
+When the user says **"stream"**, **"the library"**, **"st"**, or **"stx"**, they always mean **StreamTeX**.
 
 ## Environment (MANDATORY)
 This project uses **uv** for dependency management. You MUST:
@@ -51,13 +51,13 @@ See `.claude/references/coding_standards.md` for the full reference. Key rules:
 - Style composition: `Style + Style`, `Style + string`, `Style - string`
 
 ### Media & Visual
-- `st_image(style, src)` — Image handling with base64 encoding
+- `st_image(style, uri=)` — Image handling with base64 encoding
 - `st_code(style, code=, language=)` — Code blocks with Pygments
 - `st_space(dir, amount)`, `st_br()` — Spacing
 - `st_mermaid(style, code)` — Mermaid diagrams
 - `st_plantuml(style, code)` — PlantUML diagrams
 - `st_tikz(style, code)` — TikZ diagrams via LaTeX pipeline
-- `st_latex(style, code)` — LaTeX math rendering
+- `st_latex(content, *, style=)` — LaTeX math rendering
 
 ### Block Infrastructure
 - `ProjectBlockRegistry` — Lazy-loading block registry
@@ -114,37 +114,38 @@ Always prefer showing real examples from manual blocks over generating code from
 - To add a slash command: create `.claude/commands/my-cmd/run.md` (commands go in `commands/`, not `custom/commands/`)
 - See `.claude/custom/README.md` for full details
 
-## Workflows — stx-designer Commands
+## Workflows — stx-block Commands
 
-The `stx-designer` commands cover the full project lifecycle:
+The `stx-block` commands cover the full project lifecycle:
 
-1. **Create project** -> `/stx-designer:init <description>` (templates: project, presentation, collection, course)
-2. **Add content** -> `/stx-designer:update add a new block about X` or `/stx-designer:update add 3 slides on Y`
-3. **Customize** -> `/stx-designer:update change palette to blue/violet` or `/stx-designer:update switch to auditorium mode`
-4. **Migrate HTML** -> `/stx-designer:update --migrate convert intro.html`
-5. **Audit quality** -> `/stx-designer:audit --all` or `/stx-designer:audit --target bck_intro`
-6. **Fix issues** -> `/stx-designer:fix --all` or `/stx-designer:fix --target bck_intro`
-7. **Specialized tools** -> `/stx-designer:tool survey-convert`
-8. **Help** -> `/stx-designer:init --help` (cheatsheet for all commands)
-9. **Testing** -> `uv run pytest tests/ -v` (`/stx-developer:test-run`)
-10. **Linting** -> `uv run ruff check` (`/stx-developer:lint`)
+1. **Create project** -> `/stx-block:init <description>` (templates: project, presentation, collection, course)
+2. **Add content** -> `/stx-block:update add a new block about X` or `/stx-block:update add 3 slides on Y`
+3. **Customize** -> `/stx-block:update change palette to blue/violet` or `/stx-block:customize`
+4. **Migrate HTML** -> `/stx-block:update --migrate convert intro.html`
+5. **Audit quality** -> `/stx-block:audit --all` or `/stx-block:audit --target bck_intro`
+6. **Fix issues** -> `/stx-block:fix --all` or `/stx-block:fix --target bck_intro`
+7. **Specialized tools** -> `/stx-block:tool survey-convert`
+8. **Help** -> `/stx-block:init --help` (cheatsheet for all commands)
+9. **Testing** -> `uv run pytest tests/ -v` (`/stx-block:test`)
+10. **Linting** -> `uv run ruff check` (`/stx-block:lint`)
 
 ## Workflows — stx-ce Compound Document Engineering
 
 The `stx-ce` commands provide a structured methodology for document production:
 
 ```
-COLLECT -> ASSESS -> PLAN -> PRODUCE -> REVIEW -> FIX -> COMPOUND
+COLLECT -> ASSESS -> PLAN -> PRODUCE -> REVIEW -> FIX -> COMPOUND -> INTEGRATE
 ```
 
 1. **Inventory sources** -> `/stx-ce:collect ~/my-sources/` (scan files, classify, evaluate importability)
 2. **Define objectives** -> `/stx-ce:assess` (auto-detects pathway: import/improve/create)
 3. **Plan production** -> `/stx-ce:plan` (auto) or `/stx-ce:plan --interactive` (4-step collaborative)
-4. **Execute plan** -> `/stx-ce:produce` (orchestrates stx-designer + stx-import commands)
+4. **Execute plan** -> `/stx-ce:produce` (orchestrates stx-block + stx-import commands)
 5. **Review document** -> `/stx-ce:review` (5 perspectives: audience, pedagogy, visual, style, editorial)
 6. **Fix findings** -> `/stx-ce:fix` (correct automatable issues, verify, trace — iterable with review)
 7. **Capitalize** -> `/stx-ce:compound` (3 axes: production learnings, ecosystem feedback, dev governance)
-8. **Full cycle** -> `/stx-ce:go "description"` (autonomous with 3 validation gates)
+8. **Integrate** -> `/stx-ce:integrate` (route solutions to lib issues, skill updates, or custom rules)
+9. **Full cycle** -> `/stx-ce:go "description"` (autonomous with 4 validation gates)
 
 CE artifacts are stored in `docs/` (collect/, assess/, plans/, reviews/, solutions/).
 See `.claude/references/ce_cheatsheet_en.md` for the full reference.
@@ -157,3 +158,35 @@ Projects can adopt a design guideline for consistent visual design:
 - **Block annotation**: `# @guideline: <name>` in block files (most specific wins)
 - **Combination**: `# @guideline: A + B` — A has priority, B complements
 - **Built-in**: `maximize-viewport`, `minimalist-visual`, `academic-structured`, `dense-informative`
+
+## StreamTeX Patterns (graphic design patterns)
+
+If the project contains a `streamtex-patterns/` folder (default location:
+`.claude/custom/streamtex-patterns/`), it defines reusable graphic design
+patterns (named grids, callouts, hero stats, slide headings, etc.) that
+the user can invoke by name when creating or editing blocks.
+
+**Mandatory rules**:
+1. **Before generating or modifying any StreamTeX block**, read
+   `<patterns-dir>/_pattern_library.md` to know which patterns are available.
+2. When the user names a pattern in any prompt (e.g. *"use grid_boston"*,
+   *"like stat_hero"*), read the full `<patterns-dir>/<name>.md` file
+   **before** generating code.
+3. Strictly respect each pattern's `INVARIANTS` section. Adjust only within
+   `PARAMS`. Refuse anything matching `INTERDITS` and propose a new pattern
+   instead.
+4. The pattern's code skeleton is a **starting point** — adapt it to the
+   project's `custom/styles.py` and palette.
+5. If the user describes something that matches no existing pattern but is
+   reusable, suggest `/stx-pattern:new` to capture it.
+
+**Difference with blueprints**:
+- A **blueprint** = a complete block type (`title`, `conclusion`, `exercise`).
+- A **pattern** = a reusable composition primitive used inside a block
+  (`grid_boston`, `callout_critical`, `ptn_slide_heading`).
+
+A block can combine: 1 blueprint × N patterns × style conventions.
+
+**Commands**: `/stx-pattern:list` `/stx-pattern:show <name>`
+`/stx-pattern:new` `/stx-pattern:reindex` `/stx-pattern:validate`.
+See the `pattern-library` skill for the full mechanism.
