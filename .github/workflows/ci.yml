@@ -17,4 +17,5 @@ jobs:
           version: "latest"
       - run: uv sync
       - run: uv run python -c "import streamtex; print(streamtex.__version__)"
+      - run: uv run python -c "import book"
       - run: uv run ruff check .
